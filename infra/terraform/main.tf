@@ -90,7 +90,7 @@ resource "azurerm_synapse_workspace" "syn" {
   storage_data_lake_gen2_filesystem_id = azurerm_storage_container.raw.resource_manager_id
 
   sql_administrator_login          = var.sql_admin_login
-  sql_administrator_login_password = "Syn@1234Admin!"
+  sql_administrator_login_password = "Syn@Manu1990!"
 
   identity {
     type = "SystemAssigned"
