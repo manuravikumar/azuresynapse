@@ -1,0 +1,38 @@
+{
+  "name": "PL_Copy_BatchSales_To_SQL",
+  "properties": {
+    "activities": [
+      {
+        "name": "CopyToSql",
+        "type": "Copy",
+        "dependsOn": [],
+        "policy": {
+          "timeout": "7.00:00:00",
+          "retry": 1,
+          "retryIntervalInSeconds": 30,
+          "secureOutput": false,
+          "secureInput": false
+        },
+        "userProperties": [],
+        "typeProperties": {
+          "source": {
+            "type": "DelimitedTextSource",
+            "skipHeaderLineCount": 1
+          },
+          "sink": {
+            "type": "SqlDWSink",
+            "allowCopyCommand": true
+          }
+        },
+        "inputs": [
+          {
+            "referenceName": "DS_Raw_Sales_CSV",
+            "type": "DatasetReference"
+          }
+        ],
+        "outputs": []
+      }
+    ],
+    "annotations": []
+  }
+}

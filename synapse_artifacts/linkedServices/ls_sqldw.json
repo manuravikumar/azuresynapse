@@ -1,0 +1,9 @@
+{
+  "name": "LS_SynapseSql",
+  "properties": {
+    "type": "AzureSqlDW",
+    "typeProperties": {
+      "connectionString": "Integrated Security=False;Encrypt=True;Connection Timeout=30;Data Source=REPLACE_SYNAPSE_NAME.sql.azuresynapse.net;Initial Catalog=REPLACE_SQLPOOL_NAME;User ID=REPLACE_SQL_ADMIN;Password=REPLACE_SQL_PASSWORD"
+    }
+  }
+}

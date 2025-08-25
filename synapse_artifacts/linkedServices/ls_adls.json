@@ -1,0 +1,10 @@
+{
+  "name": "LS_ADLS",
+  "properties": {
+    "type": "AzureBlobFS",
+    "typeProperties": {
+      "url": "https://REPLACE_STORAGE_ACCOUNT_NAME.dfs.core.windows.net"
+    },
+    "connectVia": null
+  }
+}

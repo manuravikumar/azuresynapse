@@ -1,0 +1,24 @@
+{
+  "name": "DS_Raw_Sales_CSV",
+  "properties": {
+    "linkedServiceName": {
+      "referenceName": "LS_ADLS",
+      "type": "LinkedServiceReference"
+    },
+    "annotations": [],
+    "type": "DelimitedText",
+    "typeProperties": {
+      "location": {
+        "type": "AzureBlobFSLocation",
+        "fileSystem": "raw",
+        "folderPath": "batch",
+        "fileName": "*.csv"
+      },
+      "columnDelimiter": ",",
+      "firstRowAsHeader": true,
+      "quoteChar": "\"",
+      "escapeChar": "\\"
+    },
+    "schema": []
+  }
+}

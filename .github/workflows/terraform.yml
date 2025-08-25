@@ -1,0 +1,27 @@
+name: terraform-plan-apply
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'infra/terraform/**'
+jobs:
+  tf:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.6
+      - name: Terraform Init
+        working-directory: infra/terraform
+        run: terraform init
+      - name: Terraform Plan
+        working-directory: infra/terraform
+        run: terraform plan -out tfplan
+      # Uncomment to apply
+      # - name: Terraform Apply
+      #   working-directory: infra/terraform
+      #   run: terraform apply -auto-approve tfplan
