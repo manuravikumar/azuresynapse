@@ -1,27 +1,65 @@
-name: terraform-plan-apply
+name: "Terraform CI/CD to Azure"
+
 on:
-  workflow_dispatch:
   push:
-    paths:
-      - 'infra/terraform/**'
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+  ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+  ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+  ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+
 jobs:
-  tf:
+  terraform:
     runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: hashicorp/setup-terraform@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ env.ARM_CLIENT_ID }}
+          tenant-id: ${{ env.ARM_TENANT_ID }}
+          subscription-id: ${{ env.ARM_SUBSCRIPTION_ID }}
+          client-secret: ${{ env.ARM_CLIENT_SECRET }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.6.6
+
       - name: Terraform Init
         working-directory: infra/terraform
-        run: terraform init
+        run: terraform init -backend-config=backend.yaml
+
+      - name: Terraform Format
+        working-directory: infra/terraform
+        run: terraform fmt -recursive
+
+      - name: Terraform Validate
+        working-directory: infra/terraform
+        run: terraform validate
+
       - name: Terraform Plan
         working-directory: infra/terraform
         run: terraform plan -out tfplan
-      # Uncomment to apply
-      # - name: Terraform Apply
-      #   working-directory: infra/terraform
-      #   run: terraform apply -auto-approve tfplan
+
+      - name: Upload Terraform Plan
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan
+          path: infra/terraform/tfplan
+
+      - name: Terraform Apply
+        if: github.ref == 'refs/heads/main'
+        working-directory: infra/terraform
+        run: terraform apply -auto-approve tfplan
