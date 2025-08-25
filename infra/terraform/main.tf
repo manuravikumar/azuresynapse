@@ -115,13 +115,15 @@ resource "azurerm_role_assignment" "syn_to_storage_blob_data_contrib" {
 }
 
 # Dedicated SQL Pool for curated reporting
+
 resource "azurerm_synapse_sql_pool" "dwh" {
   name                 = "${var.project}dwh"
   synapse_workspace_id = azurerm_synapse_workspace.syn.id
   sku_name             = var.dedicated_sql_sku
   create_mode          = "Default"
-  tags                 = var.tags
+  storage_account_type = "GRS" # or "LRS"
 }
+
 
 output "resource_group_name" {
   value = azurerm_resource_group.rg.name
