@@ -38,6 +38,7 @@ jobs:
       - name: Terraform Init
         working-directory: infra/terraform
         run: terraform init -backend-config=backend.yaml
+        run: terraform import azurerm_resource_group.rg "/subscriptions/5ca6bba0-1c13-4cf7-9f46-3146b81aec58/resourceGroups/retailrt-rg"
 
       - name: Terraform Format
         working-directory: infra/terraform
