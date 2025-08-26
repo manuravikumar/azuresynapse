@@ -104,7 +104,7 @@ resource "azurerm_synapse_workspace" "syn" {
 
 # Allow Azure services
 resource "azurerm_synapse_firewall_rule" "allow_all_azure_ips" {
-  name                 = "AllowAllAzureIPs"
+  name                 = "AllowAllWindowsAzureIPs"
   synapse_workspace_id = azurerm_synapse_workspace.syn.id
   start_ip_address     = "0.0.0.0"
   end_ip_address       = "0.0.0.0"
