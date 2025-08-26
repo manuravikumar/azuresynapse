@@ -1,4 +1,4 @@
-name: "Terraform CI/CD to Azure"
+name: "Terraform plan"
 
 on:
   push:
@@ -62,7 +62,4 @@ jobs:
           name: tfplan
           path: infra/terraform/tfplan
 
-      - name: Terraform Apply
-        if: github.ref == 'refs/heads/main'
-        working-directory: infra/terraform
-        run: terraform apply -auto-approve tfplan
+  
