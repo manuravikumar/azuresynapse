@@ -14,27 +14,27 @@ resource "azurerm_resource_group" "rg" {
 }
 
 resource "azurerm_storage_account" "adls" {
-  name                     = lower(replace("${var.project}${random_string.suffix.result}", "-", ""))
-  resource_group_name      = azurerm_resource_group.rg.name
-  location                 = azurerm_resource_group.rg.location
-  account_tier             = "Standard"
-  account_replication_type = "LRS"
-  account_kind             = "StorageV2"
-  is_hns_enabled           = true
-  allow_nested_items_to_be_public = false
-  tags = var.tags
+  name                             = lower(replace("${var.project}${random_string.suffix.result}", "-", ""))
+  resource_group_name              = azurerm_resource_group.rg.name
+  location                         = azurerm_resource_group.rg.location
+  account_tier                     = "Standard"
+  account_replication_type         = "LRS"
+  account_kind                     = "StorageV2"
+  is_hns_enabled                   = true
+  allow_nested_items_to_be_public  = false
+  min_tls_version                  = "TLS1_2"
+  tags                             = var.tags
 }
 
-resource "azurerm_storage_container" "raw" {
-  name                  = "raw"
-  storage_account_name  = azurerm_storage_account.adls.name
-  container_access_type = "private"
+# ADLS Gen2 Filesystems (these are the containers)
+resource "azurerm_storage_data_lake_gen2_filesystem" "raw" {
+  name               = "raw"
+  storage_account_id = azurerm_storage_account.adls.id
 }
 
-resource "azurerm_storage_container" "curated" {
-  name                  = "curated"
-  storage_account_name  = azurerm_storage_account.adls.name
-  container_access_type = "private"
+resource "azurerm_storage_data_lake_gen2_filesystem" "curated" {
+  name               = "curated"
+  storage_account_id = azurerm_storage_account.adls.id
 }
 
 # ------------------------------
@@ -61,11 +61,12 @@ resource "azurerm_eventhub" "eh" {
     encoding            = "Avro"
     interval_in_seconds = 60
     size_limit_in_bytes = 10485763
+
     destination {
-      name = "EventHubArchive.AzureBlockBlob"
-      archive_name_format = "{Namespace}/{EventHub}/{PartitionId}/{Year}/{Month}/{Day}/{Hour}/{Minute}/{Second}"
-      blob_container_name = azurerm_storage_container.raw.name
-      storage_account_id  = azurerm_storage_account.adls.id
+      name                 = "EventHubArchive.AzureBlockBlob"
+      archive_name_format  = "{Namespace}/{EventHub}/{PartitionId}/{Year}/{Month}/{Day}/{Hour}/{Minute}/{Second}"
+      blob_container_name  = azurerm_storage_data_lake_gen2_filesystem.raw.name  # "raw"
+      storage_account_id   = azurerm_storage_account.adls.id
     }
   }
 }
@@ -81,16 +82,18 @@ resource "azurerm_eventhub_authorization_rule" "send" {
 }
 
 # ------------------------------
-# Synapse Workspace (with ADLS as default)
+# Synapse Workspace (ADLS as default)
 # ------------------------------
 resource "azurerm_synapse_workspace" "syn" {
-  name                                 = "${var.project}-syn-${random_string.suffix.result}"
-  resource_group_name                  = azurerm_resource_group.rg.name
-  location                             = azurerm_resource_group.rg.location
-  storage_data_lake_gen2_filesystem_id = azurerm_storage_container.raw.resource_manager_id
+  name        = "${var.project}-syn-${random_string.suffix.result}"
+  resource_group_name = azurerm_resource_group.rg.name
+  location    = azurerm_resource_group.rg.location
+
+  # Use the ADLS Gen2 Filesystem (NOT deprecated container resource_manager_id)
+  storage_data_lake_gen2_filesystem_id = azurerm_storage_data_lake_gen2_filesystem.raw.id
 
   sql_administrator_login          = var.sql_admin_login
-  sql_administrator_login_password = "Syn@Manu1990!"
+  sql_administrator_login_password = var.sql_admin_password
 
   identity {
     type = "SystemAssigned"
@@ -99,7 +102,7 @@ resource "azurerm_synapse_workspace" "syn" {
   tags = var.tags
 }
 
-# Allow your current client IP by default (adjust as needed)
+# Allow Azure services
 resource "azurerm_synapse_firewall_rule" "allow_all_azure_ips" {
   name                 = "AllowAllAzureIPs"
   synapse_workspace_id = azurerm_synapse_workspace.syn.id
@@ -107,7 +110,7 @@ resource "azurerm_synapse_firewall_rule" "allow_all_azure_ips" {
   end_ip_address       = "0.0.0.0"
 }
 
-# Grant Synapse MSI rights on Storage (to read/write from raw/curated)
+# Grant Synapse MSI rights on Storage (read/write)
 resource "azurerm_role_assignment" "syn_to_storage_blob_data_contrib" {
   scope                = azurerm_storage_account.adls.id
   role_definition_name = "Storage Blob Data Contributor"
@@ -115,7 +118,6 @@ resource "azurerm_role_assignment" "syn_to_storage_blob_data_contrib" {
 }
 
 # Dedicated SQL Pool for curated reporting
-
 resource "azurerm_synapse_sql_pool" "dwh" {
   name                 = "${var.project}dwh"
   synapse_workspace_id = azurerm_synapse_workspace.syn.id
@@ -124,7 +126,9 @@ resource "azurerm_synapse_sql_pool" "dwh" {
   storage_account_type = "GRS" # or "LRS"
 }
 
-
+# ------------------------------
+# Outputs
+# ------------------------------
 output "resource_group_name" {
   value = azurerm_resource_group.rg.name
 }
