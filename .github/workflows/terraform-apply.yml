@@ -35,6 +35,10 @@ jobs:
         working-directory: infra/terraform
         run: terraform init -backend-config=backend.yaml
 
+      - name: import existing resource
+        working-directory: infra/terraform
+        run:  terraform import azurerm_resource_group.rg "/subscriptions/5ca6bba0-1c13-4cf7-9f46-3146b81aec58/resourceGroups/retailrt-rg"
+
       - name: Terraform Plan
         working-directory: infra/terraform
         run: terraform plan -out tfplan
